@@ -9,7 +9,7 @@ export default function BottomNav() {
         { label: 'Calendar', icon: '📅', path: '/' },
         { label: 'Symptoms', icon: '📝', path: '/symptoms' },
         { label: 'Foods', icon: '🍫', path: '/foods' },
-        { label: 'Partner', icon: '❤️', path: '/partner' },
+        { label: 'Settings', icon: '⚙️', path: '/settings' },
     ]
 
     return (
