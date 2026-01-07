@@ -12,11 +12,12 @@ interface Symptom {
     note: string | null
 }
 
-const MOODS = ['😊 Happy', '😐 Neutral', '😔 Sad', '😤 Irritated', '😴 Tired']
-const FLOW_LABELS = ['Light', 'Medium', 'Heavy']
+const MOODS = ['😊 ပျော်ရွှင်', '😐 ပုံမှန်', '😔 ဝမ်းနည်း', '😤 စိတ်ဆိုး', '😴 ပင်ပန်း']
+const FLOW_LABELS = ['အနည်းငယ်', 'အလယ်အလတ်', 'များပြား']
 
 export default function SymptomsPage() {
     const [userId, setUserId] = useState('')
+    const [partnerId, setPartnerId] = useState('')
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
     const [mood, setMood] = useState('')
     const [pain, setPain] = useState(0)
@@ -30,8 +31,26 @@ export default function SymptomsPage() {
             const uid = String(WebApp.initDataUnsafe.user.id)
             setUserId(uid)
             loadSymptoms(uid)
+            loadPartnerInfo(uid)
         }
     }, [])
+
+    const loadPartnerInfo = async (uid: string) => {
+        try {
+            const res = await fetch('/api/user', {
+                method: 'POST',
+                body: JSON.stringify(WebApp.initDataUnsafe?.user)
+            })
+            if (res.ok) {
+                const data = await res.json()
+                if (data.user) {
+                    setPartnerId(data.user.partnerId || '')
+                }
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
 
     const loadSymptoms = async (uid: string) => {
         try {
@@ -68,9 +87,9 @@ export default function SymptomsPage() {
                 setSymptoms([newSymptom, ...symptoms])
 
                 if (WebApp.showAlert) {
-                    WebApp.showAlert('Symptom logged!')
+                    WebApp.showAlert('လက္ခဏာ မှတ်တမ်းတင်ပြီး!')
                 } else {
-                    alert('Symptom logged!')
+                    alert('လက္ခဏာ မှတ်တမ်းတင်ပြီး!')
                 }
 
                 // Reset form
@@ -86,12 +105,50 @@ export default function SymptomsPage() {
         }
     }
 
+    const sendToPartner = async () => {
+        if (!partnerId) {
+            if (WebApp.showAlert) {
+                WebApp.showAlert('ပါတနာ ID မထည့်ရသေးပါ။ ဆက်တင်မှာ ထည့်ပေးပါ။')
+            }
+            return
+        }
+
+        let message = `📝 *နေ့စဉ် အခြေအနေ*\n\n`
+        message += `📅 ရက်: ${new Date(selectedDate).toLocaleDateString('my-MM')}\n\n`
+
+        if (mood) message += `စိတ်ခံစားမှု: ${mood}\n`
+        if (pain > 0) message += `နာကျင်မှု: ${pain}/10\n`
+        if (flow > 0) message += `သွေးပမာဏ: ${FLOW_LABELS[flow - 1]}\n`
+        if (note) message += `\nမှတ်ချက်: ${note}`
+
+        try {
+            const res = await fetch('/api/send-symptom', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    partnerId,
+                    message
+                })
+            })
+
+            if (res.ok) {
+                if (WebApp.showAlert) {
+                    WebApp.showAlert('ပါတနာထံ ပို့ပြီးပါပြီ!')
+                } else {
+                    alert('ပါတနာထံ ပို့ပြီးပါပြီ!')
+                }
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     return (
         <div className="container">
-            <h1>📝 Daily Symptoms</h1>
+            <h1>📝 နေ့စဉ် လက္ခဏာများ</h1>
 
             <div className="card">
-                <label>Date</label>
+                <label>ရက်စွဲ</label>
                 <input
                     type="date"
                     value={selectedDate}
@@ -99,7 +156,7 @@ export default function SymptomsPage() {
                     style={{ marginBottom: '16px' }}
                 />
 
-                <label>How are you feeling?</label>
+                <label>သင် ဘယ်လို ခံစားရသလဲ?</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
                     {MOODS.map(m => (
                         <div
@@ -120,7 +177,7 @@ export default function SymptomsPage() {
                     ))}
                 </div>
 
-                <label>Pain Level: {pain}/10</label>
+                <label>နာကျင်မှု အဆင့်: {pain}/10</label>
                 <input
                     type="range"
                     min="0"
@@ -130,7 +187,7 @@ export default function SymptomsPage() {
                     style={{ width: '100%', marginBottom: '16px' }}
                 />
 
-                <label>Flow Intensity</label>
+                <label>သွေး ပမာဏ</label>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                     {FLOW_LABELS.map((label, index) => (
                         <div
@@ -153,9 +210,9 @@ export default function SymptomsPage() {
                     ))}
                 </div>
 
-                <label>Notes</label>
+                <label>မှတ်ချက်များ</label>
                 <textarea
-                    placeholder="Any other symptoms or notes..."
+                    placeholder="အခြား လက္ခဏာများ သို့မဟုတ် မှတ်ချက်များ..."
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     rows={3}
@@ -163,13 +220,19 @@ export default function SymptomsPage() {
             </div>
 
             <button className="btn btn-primary" onClick={saveSymptom} disabled={loading}>
-                {loading ? 'Saving...' : 'Save Symptom Log'}
+                {loading ? 'သိမ်းနေသည်...' : 'လက္ခဏာ မှတ်တမ်းတင်မည်'}
             </button>
+
+            {partnerId && (
+                <button className="btn btn-secondary" onClick={sendToPartner} style={{ marginTop: '-4px' }}>
+                    💌 ပါတနာထံ ပို့မည်
+                </button>
+            )}
 
             {/* Recent Symptoms */}
             {symptoms.length > 0 && (
                 <div className="card">
-                    <h2>Recent Logs</h2>
+                    <h2>မကြာသေးမီက မှတ်တမ်းများ</h2>
                     {symptoms.map(s => (
                         <div key={s.id} style={{
                             padding: '12px',
@@ -181,8 +244,8 @@ export default function SymptomsPage() {
                             </div>
                             <div style={{ fontSize: '0.9rem', color: '#666' }}>
                                 {s.mood && <span>{s.mood} • </span>}
-                                {s.pain && s.pain > 0 && <span>Pain: {s.pain}/10 • </span>}
-                                {s.flow && s.flow > 0 && <span>Flow: {FLOW_LABELS[s.flow - 1]}</span>}
+                                {s.pain && s.pain > 0 && <span>နာကျင်မှု: {s.pain}/10 • </span>}
+                                {s.flow && s.flow > 0 && <span>သွေးပမာဏ: {FLOW_LABELS[s.flow - 1]}</span>}
                             </div>
                             {s.note && <div style={{ fontSize: '0.85rem', marginTop: '4px', fontStyle: 'italic' }}>{s.note}</div>}
                         </div>

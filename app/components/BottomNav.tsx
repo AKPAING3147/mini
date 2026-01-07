@@ -6,10 +6,10 @@ export default function BottomNav() {
     const pathname = usePathname()
 
     const navs = [
-        { label: 'Calendar', icon: '📅', path: '/' },
-        { label: 'Symptoms', icon: '📝', path: '/symptoms' },
-        { label: 'Foods', icon: '🍫', path: '/foods' },
-        { label: 'Settings', icon: '⚙️', path: '/settings' },
+        { label: 'ပြက္ခဒိန်', icon: '📅', path: '/' },
+        { label: 'လက္ခဏာ', icon: '📝', path: '/symptoms' },
+        { label: 'အစားအစာ', icon: '🍫', path: '/foods' },
+        { label: 'ဆက်တင်', icon: '⚙️', path: '/settings' },
     ]
 
     return (

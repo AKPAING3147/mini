@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import BottomNav from './BottomNav'
 import WebApp from '@twa-dev/sdk'
 
-const PRESETS = ['🍫 Chocolate', '🍜 Soup', '🍕 Pizza', '🍔 Burger', '🧋 Bubble Tea', '🍎 Fruits', '🍦 Ice Cream']
+const PRESETS = ['🍫 ချောကလက်', '🍜 ဟင်းချို', '🍕 ပီဇာ', '🍔 ဘာဂါ', '🧋 ဘူဘယ်လ်တီး', '🍎 သစ်သီး', '🍦 ရေခဲမုန့်']
 
 export default function FoodsPage() {
     const [foods, setFoods] = useState<string[]>([])
@@ -55,18 +55,18 @@ export default function FoodsPage() {
         })
 
         if (WebApp.showAlert) {
-            WebApp.showAlert('Cravings updated!')
+            WebApp.showAlert('သိမ်းပြီးပါပြီ!')
         } else {
-            alert('Cravings updated!')
+            alert('သိမ်းပြီးပါပြီ!')
         }
     }
 
     return (
         <div className="container">
-            <h1>🍫 My Cravings</h1>
+            <h1>🍫 ကျွန်မ ကြိုက်တဲ့ အစားအစာများ</h1>
 
             <div className="card">
-                <h2>I love simply...</h2>
+                <h2>ကျွန်မ ကြိုက်တာကတော့...</h2>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {PRESETS.map(f => (
                         <div
@@ -89,7 +89,7 @@ export default function FoodsPage() {
                 <div className="input-group" style={{ marginTop: '20px', display: 'flex', gap: '8px' }}>
                     <input
                         type="text"
-                        placeholder="Add other food..."
+                        placeholder="အခြား အစားအစာ ထည့်မည်..."
                         value={newFood}
                         onChange={e => setNewFood(e.target.value)}
                         style={{ marginBottom: 0 }}
@@ -99,15 +99,15 @@ export default function FoodsPage() {
             </div>
 
             <div className="card">
-                <label>Note for Partner</label>
+                <label>ပါတနာအတွက် မှတ်ချက်</label>
                 <textarea
-                    placeholder="e.g. Please bring it warm..."
+                    placeholder="ဥပမာ - ပူပူလေး ယူလာပေးပါ..."
                     value={note}
                     onChange={e => setNote(e.target.value)}
                 />
             </div>
 
-            <button className="btn btn-primary" onClick={save}>Save Preferences</button>
+            <button className="btn btn-primary" onClick={save}>သိမ်းမည်</button>
             <BottomNav />
         </div>
     )
