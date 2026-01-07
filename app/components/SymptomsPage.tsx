@@ -6,10 +6,10 @@ import WebApp from '@twa-dev/sdk'
 interface Symptom {
     id: string
     date: string
-    mood: string
-    pain: number
-    flow: number
-    note: string
+    mood: string | null
+    pain: number | null
+    flow: number | null
+    note: string | null
 }
 
 const MOODS = ['😊 Happy', '😐 Neutral', '😔 Sad', '😤 Irritated', '😴 Tired']
@@ -29,40 +29,61 @@ export default function SymptomsPage() {
         if (typeof window !== 'undefined' && WebApp.initDataUnsafe?.user) {
             const uid = String(WebApp.initDataUnsafe.user.id)
             setUserId(uid)
-            loadSymptoms()
+            loadSymptoms(uid)
         }
     }, [])
 
-    const loadSymptoms = async () => {
-        // Load recent symptoms from database
-        // For now, using local state
+    const loadSymptoms = async (uid: string) => {
+        try {
+            const res = await fetch(`/api/symptoms?userId=${uid}`)
+            if (res.ok) {
+                const data = await res.json()
+                setSymptoms(data)
+            }
+        } catch (e) {
+            console.error(e)
+        }
     }
 
     const saveSymptom = async () => {
         if (!userId) return
 
-        const newSymptom = {
-            id: Date.now().toString(),
-            date: selectedDate,
-            mood,
-            pain,
-            flow,
-            note
+        setLoading(true)
+        try {
+            const res = await fetch('/api/symptoms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId,
+                    date: selectedDate,
+                    mood,
+                    pain,
+                    flow,
+                    note
+                })
+            })
+
+            if (res.ok) {
+                const newSymptom = await res.json()
+                setSymptoms([newSymptom, ...symptoms])
+
+                if (WebApp.showAlert) {
+                    WebApp.showAlert('Symptom logged!')
+                } else {
+                    alert('Symptom logged!')
+                }
+
+                // Reset form
+                setMood('')
+                setPain(0)
+                setFlow(0)
+                setNote('')
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setLoading(false)
         }
-
-        setSymptoms([newSymptom, ...symptoms])
-
-        if (WebApp.showAlert) {
-            WebApp.showAlert('Symptom logged!')
-        } else {
-            alert('Symptom logged!')
-        }
-
-        // Reset form
-        setMood('')
-        setPain(0)
-        setFlow(0)
-        setNote('')
     }
 
     return (
@@ -141,8 +162,8 @@ export default function SymptomsPage() {
                 />
             </div>
 
-            <button className="btn btn-primary" onClick={saveSymptom}>
-                Save Symptom Log
+            <button className="btn btn-primary" onClick={saveSymptom} disabled={loading}>
+                {loading ? 'Saving...' : 'Save Symptom Log'}
             </button>
 
             {/* Recent Symptoms */}
@@ -160,8 +181,8 @@ export default function SymptomsPage() {
                             </div>
                             <div style={{ fontSize: '0.9rem', color: '#666' }}>
                                 {s.mood && <span>{s.mood} • </span>}
-                                {s.pain > 0 && <span>Pain: {s.pain}/10 •</span>}
-                                {s.flow > 0 && <span>Flow: {FLOW_LABELS[s.flow - 1]}</span>}
+                                {s.pain && s.pain > 0 && <span>Pain: {s.pain}/10 • </span>}
+                                {s.flow && s.flow > 0 && <span>Flow: {FLOW_LABELS[s.flow - 1]}</span>}
                             </div>
                             {s.note && <div style={{ fontSize: '0.85rem', marginTop: '4px', fontStyle: 'italic' }}>{s.note}</div>}
                         </div>
