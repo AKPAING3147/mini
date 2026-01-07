@@ -19,6 +19,8 @@ export default function Home() {
     const [lastCycle, setLastCycle] = useState<Cycle | null>(null)
     const [loading, setLoading] = useState(true)
     const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 8)) // January 8, 2026
+    const [selectedDate, setSelectedDate] = useState(new Date(2026, 0, 8).toISOString().split('T')[0]) // YYYY-MM-DD format
+
 
     useEffect(() => {
         // TWA Init
@@ -52,15 +54,18 @@ export default function Home() {
     const handlePeriodStart = async () => {
         if (!user) return;
 
+        const dateToUse = new Date(selectedDate);
+        const confirmMessage = `Confirm: Period started on ${dateToUse.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}?`;
+
         if (WebApp.showConfirm) {
-            WebApp.showConfirm("Confirm: Period Started Today?", async (confirmed) => {
+            WebApp.showConfirm(confirmMessage, async (confirmed) => {
                 if (confirmed) {
                     setLoading(true)
                     try {
                         const res = await fetch('/api/cycle', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ userId: user.id, date: new Date(2026, 0, 8) })
+                            body: JSON.stringify({ userId: user.id, date: dateToUse })
                         })
                         const data = await res.json()
                         setLastCycle(data)
@@ -81,13 +86,13 @@ export default function Home() {
             })
         } else {
             // Fallback for browser testing
-            if (confirm("Confirm: Period Started Today?")) {
+            if (confirm(confirmMessage)) {
                 setLoading(true)
                 try {
                     const res = await fetch('/api/cycle', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: user.id, date: new Date(2026, 0, 8) })
+                        body: JSON.stringify({ userId: user.id, date: dateToUse })
                     })
                     const data = await res.json()
                     setLastCycle(data)
@@ -221,9 +226,23 @@ export default function Home() {
                 </div>
             </div>
 
+
+            {/* Date Picker */}
+            <div className="card" style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Period Start Date</label>
+                <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    max={new Date(2026, 11, 31).toISOString().split('T')[0]}
+                    style={{ width: '100%', marginBottom: 0 }}
+                />
+            </div>
+
             <button className="btn btn-primary" onClick={handlePeriodStart}>
-                🩸 Period Started Today
+                🩸 Log Period Start
             </button>
+
 
             {/* Calendar */}
             <div className="card" style={{ marginTop: '24px' }}>
