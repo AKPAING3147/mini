@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌸 Period Cycle Tracker (Telegram Mini App)
 
-## Getting Started
+A feminine, privacy-focused cycle tracker that runs inside Telegram. Features automatic partner notifications for period start + food cravings.
 
-First, run the development server:
+## Features
+- **Cycle Tracking**: Predicts next period and tracks delay.
+- **Partner Notifications**: Auto-sends a message to your boyfriend when you click "Period Started".
+- **Food Cravings**: Customize your favorite comfort foods to include in the notification.
+- **Privacy**: Data stored securely, explicit consent for notifications.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Database**:
+   Update `.env` with your database URL (Postgres/Neon recommended, comes with SQLite for dev).
+   ```bash
+   DATABASE_URL="file:./dev.db" # Or postgresql://...
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Telegram Bot Token**:
+   Add your bot token to `.env` to enable partner notifications.
+   ```bash
+   BOT_TOKEN="123456:ABC-..."
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Install & Run**:
+   ```bash
+   npm install
+   npx prisma db push
+   npm run dev
+   ```
 
-## Learn More
+4. **Telegram Integration**:
+   See [TELEGRAM_SETUP.md](./TELEGRAM_SETUP.md).
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
+- `app/components/*`: Main UI components (Home, Partner, Foods).
+- `app/api/*`: Backend logic for syncing users, tracking cycles, and settings.
+- `lib/telegram.ts`: Helper to send messages via Bot API.
+- `prisma/schema.prisma`: Database schema.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Partner Setup
+1. User enables "Partner Notifications" in the app.
+2. User enters Partner's Telegram ID (Partner must have started the bot).
+3. When "Period Started Today" is clicked, the bot sends the custom message + food list.

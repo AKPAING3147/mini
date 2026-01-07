@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id // Telegram User ID
+  firstName       String?
+  username        String?
+
+  // Cycle Settings
+  cycleLength     Int      @default(28)
+  periodDuration  Int      @default(5)
+
+  // Partner Settings
+  partnerId       String?  // Telegram User ID of partner
+  partnerEnabled  Boolean  @default(false)
+  partnerMessage  String   @default("Hi ❤️ My period started today.\nI might need extra care and patience 😊")
+  
+  // Food Settings
+  foodPreferences String[] // PostgreSQL native array
+  foodNote        String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  cycles          Cycle[]
+  symptoms        Symptom[]
+}
+
+model Cycle {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  startDate DateTime
+  createdAt DateTime @default(now())
+}
+
+model Symptom {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime
+  mood      String?
+  pain      Int?     // 1-10
+  flow      Int?     // 1-3 (Light, Medium, Heavy)
+  note      String?
+}
