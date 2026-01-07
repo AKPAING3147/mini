@@ -1,3 +1,5 @@
+'use client'
+
 import dynamic from 'next/dynamic'
 
 const PartnerPage = dynamic(() => import('@/app/components/PartnerPage'), { ssr: false })

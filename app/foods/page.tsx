@@ -1,3 +1,5 @@
+'use client'
+
 import dynamic from 'next/dynamic'
 
 const FoodsPage = dynamic(() => import('@/app/components/FoodsPage'), { ssr: false })
