@@ -18,6 +18,7 @@ export default function Home() {
     const [user, setUser] = useState<UserState | null>(null)
     const [lastCycle, setLastCycle] = useState<Cycle | null>(null)
     const [loading, setLoading] = useState(true)
+    const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 8)) // January 8, 2026
 
     useEffect(() => {
         // TWA Init
@@ -50,24 +51,114 @@ export default function Home() {
 
     const handlePeriodStart = async () => {
         if (!user) return;
-        if (confirm("Confirm: Period Started Today?")) {
-            setLoading(true)
-            try {
-                const res = await fetch('/api/cycle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: user.id, date: new Date() })
-                })
-                const data = await res.json()
-                setLastCycle(data)
-                if (WebApp.HapticFeedback) WebApp.HapticFeedback.notificationOccurred('success')
-                alert("Cycle started! Partner notified (if enabled).")
-            } catch (e) {
-                console.error(e)
-            } finally {
-                setLoading(false)
+
+        if (WebApp.showConfirm) {
+            WebApp.showConfirm("Confirm: Period Started Today?", async (confirmed) => {
+                if (confirmed) {
+                    setLoading(true)
+                    try {
+                        const res = await fetch('/api/cycle', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId: user.id, date: new Date(2026, 0, 8) })
+                        })
+                        const data = await res.json()
+                        setLastCycle(data)
+                        if (WebApp.HapticFeedback) WebApp.HapticFeedback.notificationOccurred('success')
+
+                        if (WebApp.showAlert) {
+                            WebApp.showAlert("Cycle started! Partner notified (if enabled).")
+                        }
+                    } catch (e) {
+                        console.error(e)
+                        if (WebApp.showAlert) {
+                            WebApp.showAlert("Error starting cycle. Please try again.")
+                        }
+                    } finally {
+                        setLoading(false)
+                    }
+                }
+            })
+        } else {
+            // Fallback for browser testing
+            if (confirm("Confirm: Period Started Today?")) {
+                setLoading(true)
+                try {
+                    const res = await fetch('/api/cycle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.id, date: new Date(2026, 0, 8) })
+                    })
+                    const data = await res.json()
+                    setLastCycle(data)
+                    alert("Cycle started! Partner notified (if enabled).")
+                } catch (e) {
+                    console.error(e)
+                    alert("Error starting cycle. Please try again.")
+                } finally {
+                    setLoading(false)
+                }
             }
         }
+    }
+
+    // Calendar Generation for 2026
+    const generateCalendar = () => {
+        const year = currentMonth.getFullYear()
+        const month = currentMonth.getMonth()
+        const firstDay = new Date(year, month, 1).getDay()
+        const daysInMonth = new Date(year, month + 1, 0).getDate()
+        const today = new Date(2026, 0, 8) // January 8, 2026
+
+        const days = []
+
+        // Empty cells for days before month starts
+        for (let i = 0; i < firstDay; i++) {
+            days.push({ day: null, className: '' })
+        }
+
+        // Actual days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day)
+            let className = 'calendar-day'
+
+            // Check if today
+            if (date.getFullYear() === today.getFullYear() &&
+                date.getMonth() === today.getMonth() &&
+                date.getDate() === today.getDate()) {
+                className += ' today'
+            }
+
+            // Calculate if period/ovulation based on last cycle
+            if (lastCycle && user) {
+                const cycleStart = new Date(lastCycle.startDate)
+                const daysSinceStart = Math.floor((date.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24))
+
+                // Period days
+                if (daysSinceStart >= 0 && daysSinceStart < user.periodDuration) {
+                    className += ' active'
+                }
+
+                // Predicted next periods
+                const cyclesToCheck = 3;
+                for (let c = 1; c <= cyclesToCheck; c++) {
+                    const nextCycleStart = user.cycleLength * c;
+                    if (daysSinceStart >= nextCycleStart && daysSinceStart < nextCycleStart + user.periodDuration) {
+                        className += ' prediction'
+                    }
+
+                    // Ovulation (middle of each cycle, around day 14)
+                    const ovulationDay = nextCycleStart - Math.floor(user.cycleLength / 2)
+                    if (daysSinceStart >= ovulationDay - 1 && daysSinceStart <= ovulationDay + 1) {
+                        className += ' ovulation'
+                    }
+                }
+            }
+
+            days.push({ day, className })
+        }
+
+        return days
     }
 
     // Prediction Logic
@@ -78,9 +169,9 @@ export default function Home() {
 
     if (lastCycle && user) {
         const start = new Date(lastCycle.startDate);
-        const today = new Date();
-        const diffTime = Math.abs(today.getTime() - start.getTime());
-        cycleDay = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const today = new Date(2026, 0, 8); // January 8, 2026
+        const diffTime = today.getTime() - start.getTime();
+        cycleDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
         const nextDate = new Date(start);
         nextDate.setDate(start.getDate() + user.cycleLength);
@@ -100,16 +191,18 @@ export default function Home() {
         }
     }
 
-    if (loading) return <div className="p-10 text-center">Loading...</div>
+    const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>
 
     return (
         <div className="container">
-            <header className="mb-8 mt-4">
-                <h1 className="text-2xl font-bold text-center">🌸 Cycle Tracker</h1>
+            <header style={{ marginBottom: '32px', marginTop: '16px' }}>
+                <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', textAlign: 'center' }}>🌸 Cycle Tracker</h1>
             </header>
 
             {/* Main Status Circle */}
-            <div className="flex justify-center mb-8" style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
                 <div style={{
                     width: '250px',
                     height: '250px',
@@ -132,14 +225,25 @@ export default function Home() {
                 🩸 Period Started Today
             </button>
 
-            {/* Calendar Grid (Simplified View) */}
-            <div className="card mt-6">
-                <h2 className="text-lg font-semibold mb-4">This Month</h2>
+            {/* Calendar */}
+            <div className="card" style={{ marginTop: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <button
+                        onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                        style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--primary-dark)' }}
+                    >←</button>
+                    <h2 style={{ margin: 0, fontSize: '1.2rem' }}>{monthName}</h2>
+                    <button
+                        onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                        style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--primary-dark)' }}
+                    >→</button>
+                </div>
+
                 <div className="calendar-grid">
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="day-header">{d}</div>)}
-                    {Array.from({ length: 30 }).map((_, i) => (
-                        <div key={i} className={`calendar-day ${i === 14 ? 'ovulation' : ''} ${i >= 0 && i < 5 ? 'active' : ''}`}>
-                            {i + 1}
+                    {generateCalendar().map((item, i) => (
+                        <div key={i} className={item.className}>
+                            {item.day || ''}
                         </div>
                     ))}
                 </div>

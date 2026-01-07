@@ -53,7 +53,12 @@ export default function FoodsPage() {
                 foodNote: note
             })
         })
-        WebApp.showPopup({ title: 'Saved', message: 'Cravings updated!' })
+
+        if (WebApp.showAlert) {
+            WebApp.showAlert('Cravings updated!')
+        } else {
+            alert('Cravings updated!')
+        }
     }
 
     return (

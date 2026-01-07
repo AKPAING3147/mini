@@ -38,7 +38,12 @@ export default function PartnerPage() {
             method: 'POST',
             body: JSON.stringify({ userId, ...config })
         })
-        WebApp.showPopup({ title: 'Success', message: 'Partner settings saved!' })
+
+        if (WebApp.showAlert) {
+            WebApp.showAlert('Partner settings saved!')
+        } else {
+            alert('Partner settings saved!')
+        }
     }
 
     return (
